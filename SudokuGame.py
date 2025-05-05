@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QMessageBox, QGridLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer  # 添加 QTimer
 from PyQt5.QtGui import QFont
 from Sudokucell import SudokuCell
 from utils import generate_sudoku
@@ -133,6 +133,17 @@ class SudokuGame(QMainWindow):
         self.main_layout.addWidget(self.sudoku_panel)
         self.main_layout.addWidget(self.number_panel)
         
+        # 计时器相关
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_timer)
+        self.elapsed_time = 0  # 记录经过的时间（秒）
+
+        # 添加计时器显示
+        self.timer_label = QLabel("时间: 00:00")
+        self.timer_label.setFont(QFont("Arial", 16))
+        self.timer_label.setAlignment(Qt.AlignCenter)
+        self.main_layout.addWidget(self.timer_label)
+        
         # 连接信号
         self.start_button.clicked.connect(self.start_game)
         self.reset_button.clicked.connect(self.reset_game)
@@ -235,6 +246,8 @@ class SudokuGame(QMainWindow):
     def start_game(self):
         self.generate_sudoku()
         self.selected_cell = None
+        self.reset_timer()  # 重置计时器
+        self.start_timer()  # 开始计时
 
     def reset_game(self):
         # 重置为当前游戏的初始状态
@@ -244,6 +257,30 @@ class SudokuGame(QMainWindow):
                 original = value != 0
                 self.cells[row][col].set_value(value, original)
         self.selected_cell = None
+        self.reset_timer()  # 重置计时器
+        self.start_timer()  # 重新开始计时
+
+    def start_timer(self):
+        """启动计时器"""
+        self.timer.start(1000)  # 每秒触发一次
+        self.elapsed_time = 0
+
+    def reset_timer(self):
+        """重置计时器"""
+        self.timer.stop()
+        self.elapsed_time = 0
+        self.update_timer_label()
+
+    def update_timer(self):
+        """更新计时器"""
+        self.elapsed_time += 1
+        self.update_timer_label()
+
+    def update_timer_label(self):
+        """更新计时器显示"""
+        minutes = self.elapsed_time // 60
+        seconds = self.elapsed_time % 60
+        self.timer_label.setText(f"时间: {minutes:02}:{seconds:02}")
 
     def check_win(self):
         # 检查是否完成
@@ -259,7 +296,8 @@ class SudokuGame(QMainWindow):
                     QMessageBox.information(self, "游戏结束", "抱歉，答案不正确！")
                     return
         
-        QMessageBox.information(self, "恭喜", "你成功解决了这个数独！")
+        QMessageBox.information(self, "恭喜", f"你成功解决了这个数独！用时: {self.timer_label.text().split(': ')[1]}")
+        self.timer.stop()  # 停止计时
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
