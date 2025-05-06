@@ -73,10 +73,10 @@ class SudokuGame(QMainWindow):
         self.main_widget.setLayout(self.main_layout)
         
         # 标题
-        self.title_label = QLabel("数独游戏")
-        self.title_label.setFont(QFont("Arial", 24, QFont.Bold))
-        self.title_label.setAlignment(Qt.AlignCenter)
-        self.main_layout.addWidget(self.title_label)
+        # self.title_label = QLabel("数独游戏")
+        # self.title_label.setFont(QFont("Arial", 24, QFont.Bold))
+        # self.title_label.setAlignment(Qt.AlignCenter)
+        # self.main_layout.addWidget(self.title_label)
         
         # 控制面板
         self.control_panel = QWidget()
@@ -88,15 +88,11 @@ class SudokuGame(QMainWindow):
         self.difficulty_combo.addItems(["简单", "中等", "困难"])
         
         self.start_button = QPushButton("开始游戏")
-        self.reset_button = QPushButton("重新开始")
-        self.check_button = QPushButton("检查答案")  # 新增检查按钮
         
         self.control_layout.addWidget(self.difficulty_label)
         self.control_layout.addWidget(self.difficulty_combo)
         self.control_layout.addStretch()
         self.control_layout.addWidget(self.start_button)
-        self.control_layout.addWidget(self.reset_button)
-        self.control_layout.addWidget(self.check_button)
         
         self.main_layout.addWidget(self.control_panel)
         
@@ -146,14 +142,19 @@ class SudokuGame(QMainWindow):
         
         # 连接信号
         self.start_button.clicked.connect(self.start_game)
-        self.reset_button.clicked.connect(self.reset_game)
-        self.check_button.clicked.connect(self.check_all)  # 连接检查按钮
         
         # 初始化游戏
         self.selected_cell = None
         self.board = [[0 for _ in range(9)] for _ in range(9)]
         self.solution = [[0 for _ in range(9)] for _ in range(9)]
-        self.start_game()
+        self.clear_board()  # 清空棋盘
+        self.reset_timer()  # 确保计时器未启动
+
+    def clear_board(self):
+        """清空棋盘"""
+        for row in range(9):
+            for col in range(9):
+                self.cells[row][col].set_value(0, original=False)
 
     def cell_clicked(self):
         sender = self.sender()
@@ -177,22 +178,6 @@ class SudokuGame(QMainWindow):
                     self.selected_cell.mark_wrong(False)
             
             self.check_win()
-
-    def check_all(self):
-        """检查所有已填数字是否正确"""
-        has_error = False
-        for row in range(9):
-            for col in range(9):
-                cell = self.cells[row][col]
-                if not cell.original and cell.value != 0:
-                    if cell.value != self.solution[row][col]:
-                        cell.mark_wrong(True)
-                        has_error = True
-                    else:
-                        cell.mark_wrong(False)
-        
-        if not has_error:
-            QMessageBox.information(self, "检查结果", "所有已填数字都是正确的！")
 
     def generate_sudoku(self):
         # 生成一个完整的数独解决方案
@@ -248,17 +233,6 @@ class SudokuGame(QMainWindow):
         self.selected_cell = None
         self.reset_timer()  # 重置计时器
         self.start_timer()  # 开始计时
-
-    def reset_game(self):
-        # 重置为当前游戏的初始状态
-        for row in range(9):
-            for col in range(9):
-                value = self.board[row][col]
-                original = value != 0
-                self.cells[row][col].set_value(value, original)
-        self.selected_cell = None
-        self.reset_timer()  # 重置计时器
-        self.start_timer()  # 重新开始计时
 
     def start_timer(self):
         """启动计时器"""
